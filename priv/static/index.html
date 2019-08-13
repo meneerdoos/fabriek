@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="description" content=""/>
+    <meta name="author" content=""/>
+
+    <title>Project Erlang </title>
+
+    <!-- Bootstrap Core CSS -->
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css"/> -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" >
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.css" />
+    <!-- Custom CSS -->
+    <style>
+        body {
+            padding-top: 50px;
+        }
+        .starter-template {
+            padding: 40px 15px;
+            text-align: center;
+        }
+    </style>
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+</head>
+
+<body>
+
+<script>
+    var pidtopass ;
+    var pipesystem ;
+    var created = false ;
+    console.log("ok, javascript vertrokken ");
+
+
+    setInterval(function(){
+        if(created)
+        {
+          refresh();
+          loadError();
+
+        }
+    }, 10000);
+
+    function switchOnPump(id){
+
+      pipesystem.forEach(function(entry) {
+        if(entry.ID == id)
+        {
+          pid = entry.resource_PID ;
+        }
+      });
+
+      fetch("/switchOnPump", { // Send POST to Cowboy web server with terminal command
+           method: "POST",
+           headers: {
+               "Content-Type": "text/plain",
+           },
+           body: String(pid)
+       })
+       .then(function(response) {
+           if(response.ok) {
+               return response.text()
+                       .then(function(text) {
+                           return;
+                       });
+           }
+           throw new Error('Not OK.');
+       })
+
+       refresh();
+
+    }
+
+
+    function switchOnRealPump(){
+      document.getElementById("p1").innerHTML = "PUMP ON";
+      fetch('/switchOnRealPump')
+      .then(response => {
+        return response.json();
+      })
+      .then(data => {
+      // Work with JSON data here
+
+      })
+      .catch(err => {
+        // Do something for an error here
+    })
+
+
+    }
+
+
+
+        function switchOffRealPump(){
+          document.getElementById("p1").innerHTML = "PUMP OFF";
+          fetch('/switchOffRealPump')
+          .then(response => {
+            return response.json();
+          })
+          .then(data => {
+          // Work with JSON data here
+
+          })
+          .catch(err => {
+            // Do something for an error here
+        })
+
+
+        }
+
+    function switchOffPump(id){
+      pipesystem.forEach(function(entry) {
+        if(entry.ID == id)
+        {
+          pid = entry.resource_PID ;
+        }
+      });
+
+      fetch("/switchOffPump", { // Send POST to Cowboy web server with terminal command
+           method: "POST",
+           headers: {
+               "Content-Type": "text/plain",
+           },
+           body: String(pid)
+       })
+       .then(function(response) {
+           if(response.ok) {
+               return response.text()
+                       .then(function(text) {
+                           return;
+                       });
+           }
+           throw new Error('Not OK.');
+       })
+       refresh();
+
+
+    }
+
+    function loadError()
+    {
+
+      fetch('/getError')
+      .then(response => {
+        return response.json();
+      })
+      .then(data => {
+        errors = document.getElementById("errors");
+        errors.innerHTML ="";
+        object = data[0];
+        console.log(object.PumpError);
+        if (object.PumpError == true )
+        {
+          el = document.createElement("li");
+          el.innerHTML = "Pump error has been set in test ";
+          errors.appendChild(el);
+            console.log("pumperr");
+        }
+        if (object.PumpDifference == true )
+        {
+          el = document.createElement("li");
+          el.innerHTML = "There's a different between the state of digital and real pump ";
+          errors.appendChild(el);
+            console.log("pumpdiff");
+        }
+        if (object.WaterError == true )
+        {
+          el = document.createElement("li");
+          el.innerHTML = "Flow error has been set in test ";
+          errors.appendChild(el);
+            console.log("waterr");
+        }
+        if (object.FlowDifference == true )
+        {
+          el = document.createElement("li");
+          el.innerHTML = "There's a difference between digital and real flow  ";
+          errors.appendChild(el);
+            console.log("flowdiff");
+        }
+        console.log(data[0]);
+
+        for (var property in data) {
+            console.log(property);
+          }
+        console.log(data);// Work with JSON data here
+
+      })
+      .catch(err => {
+        // Do something for an error here
+    })
+      console.log("loeadError");
+    }
+
+    function refresh()
+    {
+      fluidTable = document.getElementById("Fluidtable");
+      table = document.getElementById("tableplace");
+      table.innerHTML = "";
+      fetch('/getAll')
+      .then(response => {
+          return response.json();
+      })
+      .then(data => {
+          pipesystem = data ;
+          data.forEach(function (arrayItem) {
+            if( arrayItem.resource_type == "Pipe")
+            {
+              row = document.createElement("tr");
+              var cell = document.createElement("td");
+              var cellText = document.createTextNode(arrayItem.ID);
+              cell.appendChild(cellText);
+              row.appendChild(cell);
+
+              var cell = document.createElement("td");
+              var cellText = document.createTextNode(arrayItem.resource_type);
+              cell.appendChild(cellText);
+              row.appendChild(cell);
+
+              var cell = document.createElement("td");
+              var cellText = document.createTextNode(arrayItem.resource_PID);
+              cell.appendChild(cellText);
+              row.appendChild(cell);
+
+              var cell = document.createElement("td");
+              var cellText = document.createTextNode(arrayItem.resource_type_PID);
+              cell.appendChild(cellText);
+              row.appendChild(cell);
+
+
+              var cell = document.createElement("td");
+
+              cell.innerHTML += '<img style="width: 100px ; height:100px; " src="https://previews.123rf.com/images/ylivdesign/ylivdesign1701/ylivdesign170104737/70055255-water-pipe-icon-cartoon-style.jpg" class="img-thumbnail"> ';
+              row.appendChild(cell);
+
+
+              var cell = document.createElement("td");
+
+              cell.innerHTML += '<button class="btn btn-info" onclick = "loadPipe('+ arrayItem.ID +');" > link </button>';
+
+              row.appendChild(cell);
+              table.appendChild(row);
+            }
+
+            else if( arrayItem.resource_type == "Fluidum")
+            {
+              fluidTable.innerHTML = 'Fluidum: '+arrayItem.resource_PID + 'Fluidum Type:'+arrayItem.resource_type_PID ;
+            }
+            else if (arrayItem.resource_type == "Pump") {
+              row = document.createElement("tr");
+              var cell = document.createElement("td");
+              var cellText = document.createTextNode(arrayItem.ID);
+              cell.appendChild(cellText);
+              row.appendChild(cell);
+
+              var cell = document.createElement("td");
+              var cellText = document.createTextNode(arrayItem.resource_type);
+              cell.appendChild(cellText);
+              row.appendChild(cell);
+
+              var cell = document.createElement("td");
+              var cellText = document.createTextNode(arrayItem.resource_PID);
+              cell.appendChild(cellText);
+              row.appendChild(cell);
+
+              var cell = document.createElement("td");
+              var cellText = document.createTextNode(arrayItem.resource_type_PID);
+              cell.appendChild(cellText);
+              row.appendChild(cell);
+
+
+              var cell = document.createElement("td");
+
+              cell.innerHTML += '<img style="width: 100px ; height:100px; " src="https://media.istockphoto.com/vectors/water-pump-icon-vector-id873121902" class="img-thumbnail"> ';
+              row.appendChild(cell);
+
+
+              var cell = document.createElement("td");
+              // cell.innerHTML += '<button class="btn btn-info" onclick = "loadPipe('+arrayItem.resource_PID+')"> link </button>';
+              if(arrayItem.status == "off")
+              {
+                cell.innerHTML += '<button class="btn btn-danger" onclick = "switchOnPump('+arrayItem.ID+');" > switch on </button>';
+
+              }
+              else if (arrayItem.status == "on") {
+                cell.innerHTML += '<button class="btn btn-success" onclick = "switchOffPump('+arrayItem.ID+');" > switch off </button>';
+
+              }
+              // cell.innerHTML += '<button class="btn btn-info" onclick = "loadPipe('+arrayItem.resource_PID.+');" > link </button>';
+
+              row.appendChild(cell);
+              table.appendChild(row);
+            }
+            else if(arrayItem.resource_type == "FlowMeter")
+            {
+              row = document.createElement("tr");
+              var cell = document.createElement("td");
+              var cellText = document.createTextNode(arrayItem.ID);
+              cell.appendChild(cellText);
+              row.appendChild(cell);
+
+              var cell = document.createElement("td");
+              var cellText = document.createTextNode(arrayItem.resource_type);
+              cell.appendChild(cellText);
+              row.appendChild(cell);
+
+              var cell = document.createElement("td");
+              var cellText = document.createTextNode(arrayItem.resource_PID);
+              cell.appendChild(cellText);
+              row.appendChild(cell);
+
+              var cell = document.createElement("td");
+              var cellText = document.createTextNode(arrayItem.resource_type_PID);
+              cell.appendChild(cellText);
+              row.appendChild(cell);
+
+
+              var cell = document.createElement("td");
+
+              cell.innerHTML += '<img style="width: 100px ; height:100px; " src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTpGEcBXPCxxg40_Er_NIAehQ5CWvosjEOJj0DZz0gEbG9GZP2G_g" class="img-thumbnail"> ';
+              row.appendChild(cell);
+              var cell = document.createElement("td");
+              var cellText = document.createTextNode(Math.round(arrayItem.flow*100)/100);
+              cell.appendChild(cellText);
+              row.appendChild(cell);
+
+              //
+              // var cell = document.createElement("td");
+              // // cell.innerHTML += '<button class="btn btn-info" onclick = "loadPipe('+arrayItem.resource_PID+')"> link </button>';
+              //
+              // // cell.innerHTML += '<button class="btn btn-info" onclick = "loadPipe('+arrayItem.resource_PID.+');" > link </button>';
+              // cell.innerHTML += '<button class="btn btn-info" onclick = "loadPipe('+ arrayItem.ID +');" > link </button>';
+              //
+              // row.appendChild(cell);
+              table.appendChild(row);
+            }
+
+
+
+
+        });
+        // Work with JSON data here
+        })
+        .catch(err => {
+        // Do something for an error here
+        })
+
+    }
+
+    function generateError()
+    {
+        var e = document.getElementById("sel1");
+        var test = e.options[e.selectedIndex].text;
+        console.log(test);
+        fetch("/addError", { // Send POST to Cowboy web server with terminal command
+             method: "POST",
+             headers: {
+                 "Content-Type": "text/plain",
+             },
+             body: String(test)
+         })
+         .then(data => {
+         // Work with JSON data here
+
+         })
+         .catch(err => {
+           // Do something for an error here
+       })
+    }
+
+   function loadIndex(){
+              // start the facotry
+                    fetch('/createFactory')
+                    .then(response => {
+                      return response.json();
+                    })
+                    .then(data => {
+                    // Work with JSON data here
+
+                    })
+                    .catch(err => {
+                      // Do something for an error here
+                  })
+
+
+              //load the pipes from the factory
+
+              refresh();
+              created = true ;
+
+    }
+
+function loadPipe(id)
+{
+
+  var pid ;
+  var element = document.getElementById("details");
+  element.innerHTML = "";
+  pipesystem.forEach(function(entry) {
+    if(entry.ID == id)
+    {
+      pid = entry.resource_PID ;
+
+    }
+  });
+
+
+
+  fetch("/pipe", { // Send POST to Cowboy web server with terminal command
+       method: "POST",
+       headers: {
+           "Content-Type": "text/plain",
+       },
+       body: String(pid)
+   })
+
+   .then(response => {
+       return response.json();
+   })
+   .then(data => {
+      console.log(data);
+      data.forEach(function(entry){
+        console.log(entry);
+        if(entry.resource_type == "Connector1"){
+          newElement = document.createElement("p");
+          newElement.innerHTML = "connector1:"+entry.resource_PID;
+          element.append(newElement);
+        }
+        else if(entry.resource_type == "Connector2"){
+          newElement = document.createElement("p");
+          newElement.innerHTML = "connector2:"+entry.resource_PID;
+          element.append(newElement);
+
+        }
+        else if(entry.resource_type == "Location"){
+          newElement = document.createElement("p");
+          newElement.innerHTML = "Location:"+entry.resource_PID;
+          element.append(newElement);
+        }
+
+
+      });
+
+
+     })
+     // Work with JSON data here
+
+     .catch(err => {
+     // Do something for an error here
+     })
+
+   // .then(function(response) {
+   //     if(response.ok) {
+   //         return response.text()
+   //                 .then(function(text) {
+   //                     return;
+   //                 });
+   //     }
+   //     throw new Error('Not OK.');
+   // })
+
+  // fetch("/terminalCommand", { // Send POST to Cowboy web server with terminal command
+  //      method: "POST",
+  //      headers: {
+  //          "Content-Type": "text/plain",
+  //      },
+  //      body: String(command)
+  //  })
+  //  .then(function(response) {
+  //      if(response.ok) {
+  //          return response.text()
+  //                  .then(function(text) {
+  //                      var x = '[[;green;]'.concat($.terminal.escape_brackets(text)).concat(']');
+  //                      term.echo(x); // Print Cowboy web server response in terminal
+  //                      return;
+  //                  });
+  //      }
+  //      throw new Error('Not OK.');
+  //  })
+}
+
+function updateFlow()
+{
+  value = document.getElementById("Range1").value ;
+  document.getElementById("value1").innerHTML = value ;
+  fetch("/updateFlow", { // Send POST to Cowboy web server with terminal command
+       method: "POST",
+       headers: {
+           "Content-Type": "text/plain",
+       },
+       body: String(value)
+   })
+   .then(data => {
+   // Work with JSON data here
+
+   })
+   .catch(err => {
+})
+
+  console.log("update flow");
+  console.log(value);
+}
+
+function updateMargin()
+{
+  value = document.getElementById("Range2").value ;
+  document.getElementById("value2").innerHTML = value ;
+  fetch("/updateMargin", { // Send POST to Cowboy web server with terminal command
+       method: "POST",
+       headers: {
+           "Content-Type": "text/plain",
+       },
+       body: String(value)
+   })
+   .then(data => {
+   // Work with JSON data here
+
+   })
+   .catch(err => {
+
+})
+  console.log("update margin");
+  console.log(value);
+}
+
+// function AddAppliance()
+// {
+//   var sel = document.getElementById('sel1').value ;
+//   if(sel == "Pump")
+//   {
+//   }
+//   else if (sel == "HeatExchanger") {
+//   }
+//   else if (sel == "FlowMeter") {
+//   }
+
+  //
+  // fetch("/addAppliance", { // Send POST to Cowboy web server with terminal command
+  //      method: "POST",
+  //      headers: {
+  //          "Content-Type": "text/plain",
+  //      },
+  //      body: String(pid)
+  //  })
+  //  .then(function(response) {
+  //      if(response.ok) {
+  //          return response.text()
+  //                  .then(function(text) {
+  //                    console.log(text);
+  //                      return;
+  //                  });
+  //      }
+  //      throw new Error('Not OK.');
+  //  })
+
+// }
+
+</script>
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
+      <a class="navbar-brand" href="#">Navbar</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item active">
+            <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Link</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link disabled" href="#">Disabled</a>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="http://example.com" id="dropdown01" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Dropdown</a>
+            <div class="dropdown-menu" aria-labelledby="dropdown01">
+              <a class="dropdown-item" href="#">Create your own factory</a>
+              <a class="dropdown-item" href="#">Digital Twin </a>
+              <a class="dropdown-item" href="#">Something else here</a>
+            </div>
+          </li>
+        </ul>
+        <form class="form-inline my-2 my-lg-0">
+          <input class="form-control mr-sm-2" type="text" placeholder="Search" aria-label="Search">
+          <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+        </form>
+      </div>
+    </nav>
+
+<!-- Page Content -->
+<div class="container">
+  <h1> Digital Twin </h1>
+  <!-- <div id="ex1" class="modal">
+    <p>Thanks for clicking. That felt good.</p>
+    <a href="#" rel="modal:close">Close</a>
+  </div> -->
+
+  <!-- Link to open the modal -->
+  <!-- <p><a href="#ex1" rel="modal:open">Open Modal</a></p> -->
+
+    <div class="row">
+      <div class="col-8">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Name</th>
+
+                <th scope="col"> PID </th>
+                <th scope="col">type PID </th>
+                <th scope="col"> img </th>
+                <th scope="col"> chciiciicha </th>
+
+
+              </tr>
+            </thead>
+            <tbody id="tableplace">
+            </tbody>
+          </table>
+        </div>
+
+      <div  class="col-4">
+          <div style="border:1px solid black; " > <h3> <img style="width: 50px ; height:50px; " src="https://cdn2.iconfinder.com/data/icons/climate-control-ui/512/drop-water-fluid-climate-control-function-512.png" class="img-thumbnail"> Fluidium </h3> <div id="Fluidtable" >Plain Water </div> </div>
+          <div style="border:1px solid black;" class="col-4">  <h3> Détails </h3> <div id="details" ></div> </div>
+
+      </div>
+
+
+
+
+          <!-- <div class="form-group">
+            <label for="sel1">Select list:</label>
+            <select class="form-control" id="sel1">
+              <option>Pump</option>
+              <option>HeatExchanger</option>
+              <option>FlowMeter</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="pidinput">Pipe PID:</label>
+            <input type="text" class="form-control" id="pidinput">
+          </div> -->
+          <div class="container">
+            <div class="row">
+            <h1> Errors </h1>
+            <div >
+              <ul id="errors" >
+
+              </ul>
+            </div>
+          </div>
+          <div class="row">
+<h1> control Simulation </h1>
+</div>
+          <div class="row">
+            <label for="Range1"> <div id="value1" > value </div> Flow Value</label>
+            <input onchange="updateFlow()" type="range" class="custom-range" min="0" max="100" id="Range1">
+            <label for="Range2"> <div id="value2" > value </div> Flow Margin </label>
+            <input onchange="updateMargin()" type="range" class="custom-range" min="0" max="25" id="Range2">
+          </div>
+          <div class="row">
+            <div class="form-group">
+             <label for="sel1">Errors:</label>
+             <select class="form-control" id="sel1">
+               <option>PumpError</option>
+               <option>WaterError</option>
+             </select>
+            </div>
+          <!-- <div class="input-group"> -->
+            <!-- <div class="input-group-prepend">
+              <span class="input-group-text">Console</span>
+            </div>
+            <textarea class="form-control" aria-label="With textarea"></textarea> -->
+            <button onclick="generateError()" type="button" class="btn btn-outline-success"> Generate </button>
+
+          <!-- </div> -->
+        </div>
+        <div class="row">
+          <button onclick="switchOnRealPump()" type="button" class="btn btn-outline-success"> Pump On </button>
+          <button onclick="switchOffRealPump()" type="button" class="btn btn-outline-success"> Pump Off </button>
+          <div ><p id="p1"> PUMP OFF <p> </div>
+        </div>
+          <div class="row">
+          <button onclick="loadIndex()" type="button" class="btn btn-outline-success"> Create Factory </button>
+          <!-- <button onclick="AddAppliance()" type="button" class="btn btn-outline-success"> Add Appliance </button> -->
+          <!-- <button onclick="loadError()" type="button" class="btn btn-outline-success"> Create Factory </button> -->
+
+          </div>
+            <!-- <a href="/createFactory" class="btn btn-info" role="button"> Start Factory </a> -->
+    </div>
+  </div>
+    <!-- /.row -->
+</div>
+</br>
+</br>
+</br>
+
+</br>
+</br>
+
+</br>
+</br>
+
+</br>
+
+<!-- /.container -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+</body>
+</html>
